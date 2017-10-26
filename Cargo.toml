@@ -1,6 +1,7 @@
 [package]
-name = "pcap-index"
+name = "pcap-file-index"
 version = "0.1.0"
 authors = ["SEKINE, Hideki <sekineh@toyo.co.jp>"]
 
 [dependencies]
+pcap-file = "0.7.0"
