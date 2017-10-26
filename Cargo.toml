@@ -1,0 +1,6 @@
+[package]
+name = "pcap-index"
+version = "0.1.0"
+authors = ["SEKINE, Hideki <sekineh@toyo.co.jp>"]
+
+[dependencies]
