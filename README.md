@@ -1,7 +1,7 @@
 # pcap-file-index
 
 This crate provides O(1) index access for packets in a pcap file.
-You can access to the n'th packet in the pcap file in constant time.
+You can access to the nth packet in the pcap file in constant time.
 
 ## Usage
 
@@ -31,7 +31,7 @@ The dependency on pcap-file was determined based on the following criteria.
   - support other than little endian: yes
   - support nanosecond pcap: yes
   - support write: yes
-  - can access to undelying reader: yes
+  - can access to underlying reader: yes
 
 - pcap-rs 1.0.1 - nom-based pcap parser
   - support other than little endian: yes
@@ -42,7 +42,7 @@ The dependency on pcap-file was determined based on the following criteria.
   - support other than little endian: yes
   - support nanosecond pcap: yes
   - support write: yes
-  - can access to undelying reader: no
+  - can access to underlying reader: no
 
 - pcapng 1.0.0 - nom-based pcapng-only parser
   - support other than little endian: no
