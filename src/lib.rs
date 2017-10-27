@@ -4,8 +4,10 @@ use std::io;
 use std::io::prelude::*;
 use std::io::SeekFrom;
 use pcap_file::*;
-// use pcap_file::errors::ResultChain;
 
+/// Thin wrapper to the PcapReader that support Seek and Iterator traits.
+///
+/// The functionality is minimum, use inner field to access more features.
 pub struct PcapReaderSeek<R>
     where R: Read + Seek
 {
@@ -15,10 +17,12 @@ pub struct PcapReaderSeek<R>
 impl<R> PcapReaderSeek<R>
     where R: Read + Seek
 {
+    /// Create the object from R: Read + Seek
     pub fn new(reader: R) -> errors::ResultChain<PcapReaderSeek<R>> {
         Ok(PcapReaderSeek { inner: PcapReader::new(reader)? })
     }
 
+    /// Returns the current offset within the file.
     pub fn tell(&mut self) -> io::Result<u64> {
         self.seek(SeekFrom::Current(0))
     }
