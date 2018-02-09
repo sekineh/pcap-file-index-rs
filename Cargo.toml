@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["SEKINE, Hideki <sekineh@toyo.co.jp>"]
 
 [dependencies]
-pcap-file = "0.7.0"
+pcap-file = "0.8.0"

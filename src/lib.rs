@@ -1,5 +1,6 @@
 extern crate pcap_file;
 
+use pcap_file::errors::ResultChain;
 use std::io;
 use std::io::prelude::*;
 use std::io::SeekFrom;
@@ -29,7 +30,7 @@ impl PcapReaderIndex {
         format!("{}.index", path)
     }
 
-    pub fn get(&mut self, index: usize) -> Option<Packet<'static>> {
+    pub fn get(&mut self, index: usize) -> Option<ResultChain<Packet<'static>>> {
         let offset = self.index.inner[index];
         self.inner.seek(SeekFrom::Start(offset)).ok()?;
         self.inner.next()
@@ -97,7 +98,7 @@ where
 }
 
 impl<R: Read + Seek> Iterator for PcapReaderSeek<R> {
-    type Item = Packet<'static>;
+    type Item = ResultChain<Packet<'static>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Iterator::next(&mut self.inner)
@@ -121,7 +122,7 @@ mod tests {
             let offset = pcap_reader.tell().unwrap();
             assert_eq!(offset, calc_offset);
             // println!("offset: {:?}", offset);
-            if let Some(pkt) = pcap_reader.next() {
+            if let Some(Ok(pkt)) = pcap_reader.next() {
                 // println!("pkt: {:?}", pkt);
                 calc_offset = offset + 16 + pkt.header.incl_len as u64;
             // println!("tell + 16 + pkt.incl_len: {}", calc_offset);
