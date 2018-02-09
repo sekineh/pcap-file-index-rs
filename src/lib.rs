@@ -29,24 +29,12 @@ impl PcapReaderIndex {
         format!("{}.index", path)
     }
 
-    pub fn access(&mut self, index: usize) -> Packet<'static> {
+    pub fn get(&mut self, index: usize) -> Option<Packet<'static>> {
         let offset = self.index.inner[index];
-        self.inner.seek(SeekFrom::Start(offset));
-        self.inner.next().unwrap()
+        self.inner.seek(SeekFrom::Start(offset)).ok()?;
+        self.inner.next()
     }
 }
-
-// impl std::ops::Index<usize> for PcapReaderIndex {
-//     type Output = Packet<'static>;
-//     fn index(&self, index: usize) -> Self::Output {
-//         let offset = self.index.inner[index];
-//         unsafe {
-//             let reader: &mut PcapReaderSeek<BufReader<File>> = std::mem::transmute(&self.inner);
-//             reader.seek(SeekFrom::Start(offset));
-//             reader.next().unwrap()
-//         }
-//     }
-// }
 
 /// Store packet offsets included within the pcap file
 #[derive(Debug)]
@@ -55,8 +43,8 @@ struct FileOffsetIndex {
 }
 
 impl FileOffsetIndex {
-    pub fn from_pcap_path(pcap: &str) -> errors::ResultChain<Self> {
-        let mut reader = PcapReaderSeek::new(std::fs::File::open(pcap)?).unwrap();
+    pub fn from_pcap_path(pcap_path: &str) -> errors::ResultChain<Self> {
+        let mut reader = PcapReaderSeek::new(std::fs::File::open(pcap_path)?)?;
         let mut inner: Vec<u64> = Vec::new();
 
         loop {
@@ -75,17 +63,21 @@ impl FileOffsetIndex {
 ///
 /// The functionality is minimum, use inner field to access more features.
 pub struct PcapReaderSeek<R>
-    where R: Read + Seek
+where
+    R: Read + Seek,
 {
     pub inner: PcapReader<R>,
 }
 
 impl<R> PcapReaderSeek<R>
-    where R: Read + Seek
+where
+    R: Read + Seek,
 {
     /// Create the object from R: Read + Seek
     pub fn new(reader: R) -> errors::ResultChain<PcapReaderSeek<R>> {
-        Ok(PcapReaderSeek { inner: PcapReader::new(reader)? })
+        Ok(PcapReaderSeek {
+            inner: PcapReader::new(reader)?,
+        })
     }
 
     /// Returns the current offset within the file.
@@ -95,7 +87,8 @@ impl<R> PcapReaderSeek<R>
 }
 
 impl<R> Seek for PcapReaderSeek<R>
-    where R: Read + Seek
+where
+    R: Read + Seek,
 {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         let file = self.inner.get_mut();
@@ -131,7 +124,7 @@ mod tests {
             if let Some(pkt) = pcap_reader.next() {
                 // println!("pkt: {:?}", pkt);
                 calc_offset = offset + 16 + pkt.header.incl_len as u64;
-                // println!("tell + 16 + pkt.incl_len: {}", calc_offset);
+            // println!("tell + 16 + pkt.incl_len: {}", calc_offset);
             } else {
                 break;
             }
@@ -140,9 +133,10 @@ mod tests {
 
     #[test]
     fn pcap_access() {
-        let mut reader = PcapReaderIndex::new("tests/test_in.pcap").expect("Error opening pcap file");
-        println!("1: {:?}", reader.access(1));
-        println!("0: {:?}", reader.access(0));
-        println!("5: {:?}", reader.access(5));
+        let mut reader =
+            PcapReaderIndex::new("tests/test_in.pcap").expect("Error opening pcap file");
+        println!("1: {:?}", reader.get(1));
+        println!("0: {:?}", reader.get(0));
+        println!("5: {:?}", reader.get(5));
     }
 }
