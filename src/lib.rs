@@ -1,28 +1,70 @@
 extern crate pcap_file;
 
-use pcap_file::errors::ResultChain;
-use std::io;
+use std::path::Path;
 use std::io::prelude::*;
 use std::io::SeekFrom;
-use pcap_file::*;
-
+use std::io::Result as IoResult;
 use std::fs::File;
 use std::io::BufReader;
+use pcap_file::*;
+use pcap_file::errors::ResultChain;
 
-/// PcapReader that support Index trait
+/// extension methods for PcapReader
+pub trait PcapReaderSeek {
+    fn tell(&mut self) -> IoResult<u64>;
+    fn seek(&mut self, offset: u64) -> IoResult<u64>;
+}
+
+/// extension methods for PcapReader when the underlying Reader provides `Seek` trait.
+impl<T> PcapReaderSeek for PcapReader<T>
+where
+    T: Read + Seek,
+{
+    /// returns the current offset
+    fn tell(&mut self) -> IoResult<u64> {
+        self.get_mut().seek(SeekFrom::Current(0))
+    }
+    /// seeks to the specified offset
+    fn seek(&mut self, offset: u64) -> IoResult<u64> {
+        self.get_mut().seek(SeekFrom::Start(offset))
+    }
+}
+
+/// Stores packet offsets included within the pcap file
+#[derive(Debug)]
+struct FileOffsets {
+    inner: Vec<u64>,
+}
+
+impl FileOffsets {
+    /// Creates
+    pub fn from_pcap<P: AsRef<Path>>(pcap: P) -> errors::ResultChain<Self> {
+        let mut reader = PcapReader::new(BufReader::new(File::open(pcap)?))?;
+        let mut inner: Vec<u64> = Vec::new();
+
+        loop {
+            inner.push(reader.tell()?);
+            match reader.next() {
+                Some(_) => continue,
+                None => break,
+            }
+        }
+        Ok(FileOffsets { inner: inner })
+    }
+}
+
+/// PcapReader that support random access
 struct PcapReaderIndex {
-    pub inner: PcapReader<BufReader<File>>,
-    index: FileOffsetIndex,
+    pub pcap_reader: PcapReader<BufReader<File>>,
+    offsets: FileOffsets,
 }
 
 impl PcapReaderIndex {
-    pub fn new(path: &str) -> errors::ResultChain<PcapReaderIndex> {
-        let index = FileOffsetIndex::from_pcap_path(path)?;
-        let file = File::open(path)?;
-        let buf = std::io::BufReader::new(file);
+    /// Creates new `PcapReaderIndex` struct
+    pub fn new<P: AsRef<Path>>(pcap: P) -> errors::ResultChain<PcapReaderIndex> {
         Ok(PcapReaderIndex {
-            inner: PcapReader::new(buf)?,
-            index: index,
+            pcap_reader: PcapReader::new(BufReader::new(File::open(&pcap)?))?,
+            offsets: FileOffsets::from_pcap(&pcap)?,
         })
     }
 
@@ -31,34 +73,19 @@ impl PcapReaderIndex {
     }
 
     pub fn get(&mut self, index: usize) -> Option<ResultChain<Packet<'static>>> {
-        let offset = self.index.inner[index];
-        self.inner.get_mut().seek(SeekFrom::Start(offset)).ok()?;
-        self.inner.next()
-    }
-}
-
-/// Store packet offsets included within the pcap file
-#[derive(Debug)]
-struct FileOffsetIndex {
-    inner: Vec<u64>,
-}
-
-impl FileOffsetIndex {
-    pub fn from_pcap_path(pcap_path: &str) -> errors::ResultChain<Self> {
-        let mut reader = PcapReader::new(std::fs::File::open(pcap_path)?)?;
-        let mut inner: Vec<u64> = Vec::new();
-
-        loop {
-            inner.push(reader.get_ref().seek(SeekFrom::Current(0))?);
-            match reader.next() {
-                Some(_) => continue,
-                None => break,
-            }
+        if index >= self.offsets.inner.len() {
+            return None;
         }
+        let offset = self.offsets.inner[index];
+        self.pcap_reader.seek(offset);
+        self.pcap_reader.next()
+    }
 
-        Ok(FileOffsetIndex { inner: inner })
+    pub fn next(&mut self) -> Option<ResultChain<Packet<'static>>> {
+        self.pcap_reader.next()
     }
 }
+
 
 // #[cfg(test)]
 mod tests {
