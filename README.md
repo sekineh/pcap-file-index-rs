@@ -8,10 +8,10 @@ You can access to the nth packet in the pcap file in constant time.
 Add to Cargo.toml:
 ```
 [dependency]
-pcap-file = "0.7.0"
-pcap-file-index = "" 
+pcap-file = "0.9.0"
+pcap-file-index = "0.1.0" 
 ```
-I tested with pcap-file 0.7.0 on windows platform.
+I tested with pcap-file 0.9.0 on windows 64-bit platform.
 
 ## Features
 - PcapReader Wrapper that extracts offsets from pcap file
