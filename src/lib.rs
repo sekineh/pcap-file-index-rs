@@ -195,10 +195,12 @@ impl PcapReaderIndex {
 mod tests {
     // use std::fs::File;
     use *;
+    const PCAP_PATH: &str = "tests/test_in.pcap";
+    const OFFSET_PATH: &str = "tests/test_in.pcap.offset_file";
 
     #[test]
     fn sanity() {
-        let file = File::open("tests/test_in.pcap").expect("Error opening file");
+        let file = File::open(PCAP_PATH).expect("Error opening file");
         let mut pcap_reader = PcapReader::new(file).unwrap();
 
         let mut calc_offset = 24;
@@ -219,41 +221,42 @@ mod tests {
 
     mod file_offsets {
         use *;
-
-        const pcap_path: &str = "tests/test_in.pcap";
-        const offset_path: &str = "tests/test_in.pcap.offsets";
+        use self::tests::*;
 
         #[test]
         fn methods() {
-            let offsets = FileOffsets::from_pcap(pcap_path).expect("Error opening pcap file");
+            let offsets = FileOffsets::from_pcap(PCAP_PATH).expect("Error opening pcap file");
             assert_eq!(
                 offsets.inner,
                 vec![24, 157, 442, 528, 614, 708, 941, 1027, 1221, 1319]
             );
             offsets
-                .save_to(offset_path)
+                .save_to(OFFSET_PATH)
                 .expect("Error writing offset file");
-            let load = FileOffsets::load_from(offset_path).expect("Error reading offset file");
+            let load = FileOffsets::load_from(OFFSET_PATH).expect("Error reading offset file");
             assert_eq!(offsets.inner, load.inner);
 
-            std::fs::remove_file(offset_path);
+            std::fs::remove_file(OFFSET_PATH).unwrap();
         }
 
     }
 
     mod pcap_reader_index {
         use *;
-        const pcap_path: &str = "tests/test_in.pcap";
-        const offset_path: &str = "tests/test_in.pcap.offsets.new";
+        use self::tests::*;
+
+        const PCAP_PATH: &str = "tests/test_in.pcap";
+        const OFFSET_PATH: &str = "tests/test_in.pcap.offsets_new";
 
         #[test]
         fn new() {
-            std::fs::remove_file(offset_path);
-            let pcap = PcapReaderIndex::new(pcap_path, offset_path, false);
+            let _ = std::fs::remove_file(OFFSET_PATH);
+
+            let pcap = PcapReaderIndex::new(PCAP_PATH, OFFSET_PATH, false);
             assert!(pcap.is_err()); // shoulf fail because offset_path is not created.
 
             let mut pcap =
-                PcapReaderIndex::new(pcap_path, offset_path, true).expect("::new() failed");
+                PcapReaderIndex::new(PCAP_PATH, OFFSET_PATH, true).expect("1st ::new() failed");
             // println!("{:?}", pcap);
             assert_eq!(pcap.len(), 10);
             assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
@@ -262,7 +265,7 @@ mod tests {
             assert!(pcap.get(10).is_none());
 
             let mut pcap =
-                PcapReaderIndex::new(pcap_path, offset_path, false).expect("::new() failed");
+                PcapReaderIndex::new(PCAP_PATH, OFFSET_PATH, false).expect("2nd ::new() failed");
             // println!("{:?}", pcap);
             assert_eq!(pcap.len(), 10);
             assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
@@ -270,28 +273,27 @@ mod tests {
             assert_eq!(pcap.get(3).unwrap().unwrap().header.incl_len, 70);
             assert!(pcap.get(10).is_none());
 
-            std::fs::remove_file(offset_path);
+            let _ = std::fs::remove_file(OFFSET_PATH);
         }
 
         #[test]
         fn from_pcap() {
-            const pcap_path: &str = "tests/test_in.pcap";
 
-            let mut pcap = PcapReaderIndex::from_pcap(pcap_path).expect("1st ::from_pcap() failed");
+            let mut pcap = PcapReaderIndex::from_pcap(PCAP_PATH).expect("1st ::from_pcap() failed");
             assert_eq!(pcap.len(), 10);
             assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
             assert_eq!(pcap.get(9).unwrap().unwrap().header.incl_len, 120);
             assert_eq!(pcap.get(3).unwrap().unwrap().header.incl_len, 70);
             assert!(pcap.get(10).is_none());
 
-            let mut pcap = PcapReaderIndex::from_pcap(pcap_path).expect("2nd ::from_pcap() failed");
+            let mut pcap = PcapReaderIndex::from_pcap(PCAP_PATH).expect("2nd ::from_pcap() failed");
             assert_eq!(pcap.len(), 10);
             assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
             assert_eq!(pcap.get(9).unwrap().unwrap().header.incl_len, 120);
             assert_eq!(pcap.get(3).unwrap().unwrap().header.incl_len, 70);
             assert!(pcap.get(10).is_none());
 
-            std::fs::remove_file(&pcap.offset_path);
+            let _ = std::fs::remove_file(&pcap.offset_path);
         }
     }
 }
