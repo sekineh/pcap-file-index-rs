@@ -272,5 +272,26 @@ mod tests {
 
             std::fs::remove_file(offset_path);
         }
+
+        #[test]
+        fn from_pcap() {
+            const pcap_path: &str = "tests/test_in.pcap";
+
+            let mut pcap = PcapReaderIndex::from_pcap(pcap_path).expect("1st ::from_pcap() failed");
+            assert_eq!(pcap.len(), 10);
+            assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
+            assert_eq!(pcap.get(9).unwrap().unwrap().header.incl_len, 120);
+            assert_eq!(pcap.get(3).unwrap().unwrap().header.incl_len, 70);
+            assert!(pcap.get(10).is_none());
+
+            let mut pcap = PcapReaderIndex::from_pcap(pcap_path).expect("1st ::from_pcap() failed");
+            assert_eq!(pcap.len(), 10);
+            assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
+            assert_eq!(pcap.get(9).unwrap().unwrap().header.incl_len, 120);
+            assert_eq!(pcap.get(3).unwrap().unwrap().header.incl_len, 70);
+            assert!(pcap.get(10).is_none());
+
+            std::fs::remove_file(&pcap.offset_path);
+        }
     }
 }
