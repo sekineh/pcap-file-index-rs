@@ -8,17 +8,18 @@ You can access to the nth packet in the pcap file in constant time.
 Add to Cargo.toml:
 ```
 [dependency]
-pcap-file = "0.9.0"
+pcap-file = "0.10.0"
 pcap-file-index = "0.1.0" 
 ```
-I tested with pcap-file 0.9.0 on windows 64-bit platform.
+I tested with pcap-file 0.10.0 on windows 64-bit platform.
 
 ## Features
 - PcapReader Wrapper that extracts offsets from pcap file
-
-## TODO
 - create index file that help random access of pcap
-- implement Index trait for PcapReader
+
+## Features not planned
+- implement `Index` trait for PcapReader
+  - `Index` trait can't be implemented because it assumes the returned value is already on some memory location.
 
 ## Comparison matrix 
 The dependency on pcap-file was determined based on the following criteria.
