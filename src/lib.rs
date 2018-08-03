@@ -6,17 +6,17 @@
 //! use pcap_file_index::PcapReaderIndex;
 //!
 //! let mut pcap = PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
-//! 
+//!
 //! // offset file is created:
-//! assert_eq!(std::path::Path::new("tests/test_in.pcap.offset.bincode").exists(), true); 
-//! 
+//! assert_eq!(std::path::Path::new("tests/test_in.pcap.offset.bincode").exists(), true);
+//!
 //! assert_eq!(pcap.len(), 10);
 //! assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
 //! assert_eq!(pcap.get(9).unwrap().unwrap().header.incl_len, 120);
 //! assert_eq!(pcap.get(3).unwrap().unwrap().header.incl_len, 70);
 //! assert!(pcap.get(10).is_none());
 //! ```
-//! 
+//!
 //! If you want to specify a custom offset file path, use `PcapReaderIndex::new()`.  
 
 extern crate bincode;
@@ -173,14 +173,23 @@ impl PcapReaderIndex {
         self.inner.next()
     }
 
-    /// returns the next Packet
-    pub fn next(&mut self) -> Option<ResultChain<Packet<'static>>> {
-        self.inner.next()
-    }
+    // /// returns the next Packet
+    // pub fn next(&mut self) -> Option<ResultChain<Packet<'static>>> {
+    //     self.inner.next()
+    // }
 
     /// returns the number of packets
     pub fn len(&self) -> usize {
         self.offsets.inner.len()
+    }
+}
+
+impl Iterator for PcapReaderIndex {
+    type Item = ResultChain<Packet<'static>>;
+
+    /// returns the next Packet
+    fn next(&mut self) -> Option<ResultChain<Packet<'static>>> {
+        self.inner.next()
     }
 }
 
@@ -220,21 +229,26 @@ mod tests {
         fn methods() {
             const OFFSET_PATH: &str = "tests/OFFSET_for_methods"; // must use dedicated file
 
+            // Setup
             let _ = std::fs::remove_file(OFFSET_PATH); // remove if it already exists
             assert_eq!(std::path::Path::new(OFFSET_PATH).exists(), false);
 
+            // Create
             let offsets = PacketOffsets::from_pcap(PCAP_PATH).expect("Error opening pcap file");
             assert_eq!(
                 offsets.inner,
                 vec![24, 157, 442, 528, 614, 708, 941, 1027, 1221, 1319]
             );
 
+            // Save
             offsets.save_to(OFFSET_PATH).unwrap();
             assert_eq!(std::path::Path::new(OFFSET_PATH).exists(), true);
 
+            // Load
             let load = PacketOffsets::load_from(OFFSET_PATH).unwrap();
             assert_eq!(offsets.inner, load.inner);
 
+            // Teardown
             std::fs::remove_file(OFFSET_PATH).unwrap(); // clean up
             assert_eq!(std::path::Path::new(OFFSET_PATH).exists(), false);
         }
@@ -303,6 +317,18 @@ mod tests {
             // teardown
             let _ = std::fs::remove_file(&offset_path);
             assert_eq!(std::path::Path::new(&offset_path).exists(), false);
+        }
+
+        #[test]
+        fn iterator() {
+            const OFFSET_PATH: &str = "tests/OFFSET_for_iterator";
+
+            let pcap = PcapReaderIndex::new(PCAP_PATH, OFFSET_PATH, true).unwrap();
+            let incl_lens: Vec<_> = pcap.map(|p| p.unwrap().header.incl_len).collect();
+            assert_eq!(incl_lens, vec![117, 269, 70, 70, 78, 217, 70, 178, 82, 120]);
+
+            // teardown
+            std::fs::remove_file(OFFSET_PATH).unwrap();
         }
     }
 }
