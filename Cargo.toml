@@ -1,7 +1,9 @@
 [package]
-name = "pcap-file-index"
-version = "0.1.0"
+name = "pcap-file-ra"
+version = "0.1.1"
 authors = ["SEKINE, Hideki <sekineh@toyo.co.jp>"]
+description = "provides random access to pcap files"
+license = "MIT"
 
 [dependencies]
 pcap-file = "0.10.0"

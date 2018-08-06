@@ -1,11 +1,11 @@
-//! # pcap-file-index
+//! # pcap-file-ra
 //! 
 //! The crate provides random access to the underlying `PcapReader`.
 //!
 //! ## Examples
 //!
 //! ```
-//! use pcap_file_index::PcapReaderIndex;
+//! use pcap_file_ra::PcapReaderIndex;
 //!
 //! let mut pcap = PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
 //!
@@ -154,7 +154,7 @@ impl PcapReaderIndex {
     /// ## Example
     ///
     /// ```
-    /// let pcap = pcap_file_index::PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
+    /// let pcap = pcap_file_ra::PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
     ///
     /// assert_eq!(std::path::Path::new("tests/test_in.pcap.offset.bincode").exists(), true);
     /// ```
@@ -180,7 +180,7 @@ impl PcapReaderIndex {
     /// ## Example
     ///
     /// ```
-    /// let mut pcap = pcap_file_index::PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
+    /// let mut pcap = pcap_file_ra::PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
     ///
     /// assert_eq!(pcap.get(0).unwrap().unwrap().header.incl_len, 117);
     /// assert_eq!(pcap.get(9).unwrap().unwrap().header.incl_len, 120);
@@ -204,7 +204,7 @@ impl PcapReaderIndex {
     /// ## Example
     ///
     /// ```
-    /// let mut pcap = pcap_file_index::PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
+    /// let mut pcap = pcap_file_ra::PcapReaderIndex::from_pcap("tests/test_in.pcap").unwrap();
     ///
     /// assert_eq!(pcap.len(), 10);
     /// ```
